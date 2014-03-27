@@ -15,9 +15,9 @@ end sequence_recognizer;
 
 architecture arch1 of sequence_recognizer is
 	type state_type is (init, reading_state);
-	signal current_state, next_state : state_type;
-	signal output_int : std_logic;
+	shared variable current_state, next_state : state_type;
 	shared variable internal_register : std_logic_vector(N-1 downto 0);
+	signal output_int : std_logic;
 	signal input_int : std_logic;
 begin
 	output <= output_int;
@@ -26,9 +26,9 @@ begin
 	state_reg : process(clock, reset)
 	begin
 		if reset = '1' then
-			current_state <= init;
+			current_state := init;
 		else
-			current_state <= reading_state;
+			current_state := reading_state;
 		end if;
 	end process;
 	
@@ -37,7 +37,7 @@ begin
 		case current_state is
 			when init =>	-- when current_state is init => set all outputs to zero
 				output_int <= '0';
-				internal_register := (others=>'0');
+				internal_register := std_logic_vector(to_unsigned(0,N));
 			when reading_state => -- when current_state is reading_state
 				if rising_edge(clock) then	-- and the clock signal is rising
 					internal_register := internal_register(N-2 downto 0) & input_int; -- shift the current internal register one bit to the right and set the current input as the LSB
