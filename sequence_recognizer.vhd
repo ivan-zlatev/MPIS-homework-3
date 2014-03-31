@@ -15,7 +15,7 @@ end sequence_recognizer;
 
 architecture arch1 of sequence_recognizer is
 	type state_type is (init, reading_state);
-	shared variable current_state, next_state : state_type;
+	signal current_state : state_type;
 	shared variable internal_register : std_logic_vector(N-1 downto 0);
 	signal output_int : std_logic;
 	signal input_int : std_logic;
@@ -26,27 +26,33 @@ begin
 	state_reg : process(clock, reset)
 	begin
 		if reset = '1' then
-			current_state := init;
+			current_state <= init;
 		else
-			current_state := reading_state;
+			current_state <= reading_state;
 		end if;
 	end process;
 	
-	next_state_logic : process(clock)
+	next_state_logic : process(current_state, clock)
 	begin	
 		case current_state is
 			when init =>	-- when current_state is init => set all outputs to zero
-				output_int <= '0';
 				internal_register := std_logic_vector(to_unsigned(0,N));
 			when reading_state => -- when current_state is reading_state
 				if rising_edge(clock) then	-- and the clock signal is rising
 					internal_register := internal_register(N-2 downto 0) & input_int; -- shift the current internal register one bit to the right and set the current input as the LSB
-					if (internal_register = std_logic_vector(to_unsigned(X,N))) then -- if internal_register equals to the number X we are looking for
-						output_int <= '1'; -- set the output to 1
-					else
-						output_int <= '0'; -- if it isn't, set the output to zero
-					end if;
 				end if;
 		end case;
+	end process;
+	
+	output_logic: process (current_state, clock)
+	begin
+		if current_state = init then 
+				output_int <= '0';
+		end if;
+		if (internal_register = std_logic_vector(to_unsigned(X,N))) then -- if internal_register equals to the number X we are looking for
+			output_int <= '1'; -- set the output to 1
+		else
+			output_int <= '0'; -- if it isn't, set the output to zero
+		end if;
 	end process;
 end;
